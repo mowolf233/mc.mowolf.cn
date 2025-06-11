@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>墨狼云 - Minecraft服务器</title>
+    <style>
+        /* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --light-gray: #f5f7fa;
+            --dark-gray: #34495e;
+            --text-color: #2c3e50;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* 加载动画 */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        
+        .loader-content {
+            text-align: center;
+            animation: fadeIn 1s ease;
+        }
+        
+        .loader-logo {
+            font-size: 4rem;
+            margin-bottom: 25px;
+            color: var(--secondary-color);
+            animation: pulse 2s infinite;
+        }
+        
+        .loader-text {
+            font-size: 1.8rem;
+            margin-bottom: 35px;
+            color: var(--dark-gray);
+            font-weight: 500;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(52, 152, 219, 0.2);
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.9; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 页面内容 - 默认隐藏 */
+        #content {
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+        
+        /* 导航栏 */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.2rem 2rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            color: var(--primary-color);
+            font-size: 2rem;
+        }
+        
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark-gray);
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 0.5rem 0;
+            position: relative;
+        }
+        
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            transition: var(--transition);
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        
+        /* 主内容区域 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* 英雄区域 */
+        .hero {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+            border-radius: var(--border-radius);
+            padding: 5rem 2rem;
+            text-align: center;
+            margin: 2rem auto 4rem;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            overflow: hidden;
+            max-width: 1000px;
+            animation: fadeIn 1s ease;
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: var(--primary-color);
+            opacity: 0.1;
+            border-radius: 50%;
+        }
+        
+        .hero::after {
+            content: "";
+            position: absolute;
+            bottom: -80px;
+            left: -50px;
+            width: 250px;
+            height: 250px;
+            background: var(--secondary-color);
+            opacity: 0.05;
+            border-radius: 50%;
+        }
+        
+        .hero h1 {
+            font-size: 3.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+            line-height: 1.2;
+        }
+        
+        .hero p {
+            font-size: 1.3rem;
+            max-width: 800px;
+            margin: 0 auto 2.5rem;
+            color: var(--dark-gray);
+        }
+        
+        .server-ip {
+            background: white;
+            display: inline-flex;
+            align-items: center;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 1.5rem;
+            border: 2px solid rgba(52, 152, 219, 0.1);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .server-ip i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .server-ip span {
+            color: var(--accent-color);
+            font-weight: 700;
+            margin-left: 8px;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        /* 下载区域 */
+        .download-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 4rem;
+            margin: 0 auto 4rem;
+            box-shadow: var(--box-shadow);
+            max-width: 900px;
+            animation: fadeIn 1s ease 0.2s forwards;
+            opacity: 0;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-header h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+        
+        .section-header p {
+            color: var(--dark-gray);
+            max-width: 700px;
+            margin: 1.5rem auto 0;
+            font-size: 1.1rem;
+        }
+        
+        .pack-card {
+            background: linear-gradient(145deg, #f0f4f8, #ffffff);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            transition: var(--transition);
+            border: 1px solid #eaeaea;
+            max-width: 700px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .pack-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+        
+        .pack-image {
+            height: 280px;
+            background: linear-gradient(45deg, #3498db, #2c3e50);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 3.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pack-image::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #2c3e50, #3498db);
+            opacity: 0.8;
+        }
+        
+        .pack-image i {
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .pack-content {
+            padding: 2.5rem;
+        }
+        
+        .pack-content h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1.2rem;
+            color: var(--secondary-color);
+        }
+        
+        .pack-content p {
+            color: var(--dark-gray);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(45deg, var(--primary-color), #2980b9);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: var(--transition);
+            font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+	    margin-top: 1rem;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+            background: linear-gradient(45deg, #2980b9, var(--primary-color));
+        }
+        
+        .download-btn i {
+            margin-right: 10px;
+        }
+        
+        .file-info {
+            display: flex;
+            margin-top: 1.5rem;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .info-card {
+            background: var(--light-gray);
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-card i {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+        
+        /* 服务器规则 */
+        .rules-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 4rem;
+            margin: 0 auto 4rem;
+            box-shadow: var(--box-shadow);
+            max-width: 1000px;
+            animation: fadeIn 1s ease 0.4s forwards;
+            opacity: 0;
+        }
+        
+        .rules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.8rem;
+            margin-top: 2rem;
+        }
+        
+        .rule-card {
+            background: var(--light-gray);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+            transition: var(--transition);
+        }
+        
+        .rule-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .rule-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1.2rem;
+            color: var(--secondary-color);
+            font-size: 1.3rem;
+        }
+        
+        .rule-icon {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+        
+        .rule-card ul {
+            padding-left: 1.8rem;
+        }
+        
+        .rule-card li {
+            margin-bottom: 0.8rem;
+            line-height: 1.6;
+        }
+        
+        /* 服务器动态 */
+        .news-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 4rem;
+            margin: 0 auto 4rem;
+            box-shadow: var(--box-shadow);
+            max-width: 1000px;
+            animation: fadeIn 1s ease 0.6s forwards;
+            opacity: 0;
+        }
+        
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 3rem auto 0;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, var(--primary-color), transparent);
+            left: 20px;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 3rem;
+            padding-left: 60px;
+        }
+        
+        .timeline-date {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            z-index: 2;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        
+        .timeline-content {
+            background: var(--light-gray);
+            padding: 1.8rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+        }
+        
+        .timeline-content:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .timeline-content h3 {
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+            font-size: 1.4rem;
+        }
+        
+        .timeline-content p {
+            color: var(--dark-gray);
+            line-height: 1.7;
+        }
+        
+        /* 页脚 */
+        footer {
+            background: var(--secondary-color);
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+            margin-top: 4rem;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .copyright {
+            color: #bdc3c7;
+            font-size: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 1rem;
+            }
+            
+            .nav-links {
+                margin-top: 1rem;
+                gap: 1.2rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .download-section, .rules-section, .news-section {
+                padding: 2.5rem 1.5rem;
+            }
+            
+            .timeline::before {
+                left: 20px;
+            }
+            
+            .timeline-item {
+                padding-left: 60px;
+            }
+        }
+        
+        /* 图标样式 */
+        .icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            stroke-width: 0;
+            stroke: currentColor;
+            fill: currentColor;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div id="loader">
+        <div class="loader-content">
+            <div class="loader-logo">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z" />
+                </svg>
+            </div>
+            <h1 class="loader-text">墨狼云 · 正在加载</h1>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <!-- 页面内容 -->
+    <div id="content">
+        <!-- 导航栏 -->
+        <header>
+            <nav class="navbar">
+                <div class="logo">
+                    <svg class="logo-icon icon" viewBox="0 0 24 24">
+                        <path d="M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z" />
+                    </svg>
+                    <h1 class="logo-text">墨狼云</h1>
+                </div>
+                <div class="nav-links">
+                    <a href="#downloads">整合包下载</a>
+                    <a href="#rules">服务器规则</a>
+                    <a href="#news">服务器动态</a>
+                </div>
+            </nav>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="container">
+            <!-- 英雄区域 -->
+            <section class="hero">
+                <h1>欢迎来到墨狼云 Minecraft 服务器</h1>
+                <p>一个专注技术、建筑与友好社交的 Minecraft 社区，提供稳定、流畅的游戏体验，丰富的游戏内容和友好的社区氛围</p>
+                <div class="server-ip">
+                    <svg class="icon" viewBox="0 0 24 24" style="width:24px;height:24px;margin-right:10px;">
+                        <path d="M4,1H20A1,1 0 0,1 21,2V6A1,1 0 0,1 20,7H4A1,1 0 0,1 3,6V2A1,1 0 0,1 4,1M4,9H20A1,1 0 0,1 21,10V14A1,1 0 0,1 20,15H4A1,1 0 0,1 3,14V10A1,1 0 0,1 4,9M4,17H20A1,1 0 0,1 21,18V22A1,1 0 0,1 20,23H4A1,1 0 0,1 3,22V18A1,1 0 0,1 4,17M9,5H10V3H9V5M9,13H10V11H9V13M9,21H10V19H9V21M5,3V5H7V3H5M5,11V13H7V11H5M5,19V21H7V19H5Z" />
+                    </svg>
+                    服务器地址: <span>暂未开放</span>
+                </div>
+            </section>
+
+            <!-- 整合包下载 -->
+            <section id="downloads" class="download-section">
+                <div class="section-header">
+                    <h2>整合包下载</h2>
+                    <p>下载我们的独家整合包，畅享墨狼云服务器最佳游戏体验</p>
+                </div>
+                <div class="pack-card">
+                    <div class="pack-image">
+                        <svg class="icon" viewBox="0 0 24 24" style="font-size: 5rem;">
+                            <path d="M17,12C17,14.76 14.76,17 12,17C9.24,17 7,14.76 7,12C7,9.24 9.24,7 12,7C14.76,7 17,9.24 17,12M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z" />
+                        </svg>
+                    </div>
+                    <div class="pack-content">
+                        <h3>墨狼云专属整合包</h3>
+                        <p>专为墨狼云服务器定制的整合包。此整合包经过精心配置，确保最佳服务器兼容性和流畅游戏体验。服务器预计开启白名单验证，内部人员才可加入</p>
+                        
+                        <div class="file-info">
+                            <div class="info-card">
+                                <svg class="icon" viewBox="0 0 24 24" style="color:#3498db;width:24px;height:24px;">
+                                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M13,13V18H10V13H13Z" />
+                                </svg>
+                                <span>文件大小: ???GB</span>
+                            </div>
+                            <div class="info-card">
+                                <svg class="icon" viewBox="0 0 24 24" style="color:#3498db;width:24px;height:24px;">
+                                    <path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L5,8.09V15.91L12,19.85L19,15.91V8.09L12,4.15M14.93,8.27L16.36,9.7L10.58,15.5L7.64,12.56L9.07,11.13L10.58,12.64L14.93,8.27Z" />
+                                </svg>
+                                <span>模组数量: ???个</span>
+                            </div>
+                            <div class="info-card">
+                                <svg class="icon" viewBox="0 0 24 24" style="color:#3498db;width:24px;height:24px;">
+                                    <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
+                                </svg>
+                                <span>最后更新: 2025-6-11</span>
+                            </div>
+                        </div>
+                        
+                        <a href="http://mowolf.cn:5244/" target="_blank" class="download-btn">
+                            <svg class="icon" viewBox="0 0 24 24" style="width:24px;height:24px;margin-right:10px;">
+                                <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                            </svg>
+                            下载整合包
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 服务器规则 -->
+            <section id="rules" class="rules-section">
+                <div class="section-header">
+                    <h2>服务器规则</h2>
+                    <p>为了维护良好的游戏环境，请所有玩家遵守以下规则</p>
+                </div>
+                <div class="rules-grid">
+                    <div class="rule-card">
+                        <h3>
+                            <svg class="rule-icon icon" viewBox="0 0 24 24">
+                                <path d="M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z" />
+                            </svg>
+                            禁止行为
+                        </h3>
+                        <ul>
+                            <li>禁止使用任何作弊客户端或模组</li>
+                            <li>禁止从仓库中拿取大量物资私藏或浪费</li>
+                            <li>禁止恶意持续攻击他人</li>
+                            <li>禁止大面积破坏服务器地形</li>
+                        </ul>
+                    </div>
+                    <div class="rule-card">
+                        <h3>
+                            <svg class="rule-icon icon" viewBox="0 0 24 24">
+                                <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
+                            </svg>
+                            建筑规范
+                        </h3>
+                        <ul>
+                            <li>在出生点周围预留足够空间</li>
+                            <li>大型建筑请提前申请用地</li>
+                            <li>红石设备请勿造成服务器卡顿</li>
+                            <li>系统会定期清理无用实体和掉落物</li>
+                        </ul>
+                    </div>
+                    <div class="rule-card">
+                        <h3>
+                            <svg class="rule-icon icon" viewBox="0 0 24 24">
+                                <path d="M12,5.5A3.5,3.5 0 0,1 15.5,9A3.5,3.5 0 0,1 12,12.5A3.5,3.5 0 0,1 8.5,9A3.5,3.5 0 0,1 12,5.5M5,8C5.56,8 6.08,8.15 6.53,8.42C6.38,9.85 6.8,11.27 7.66,12.38C7.16,13.34 6.16,14 5,14A3,3 0 0,1 2,11A3,3 0 0,1 5,8M19,8A3,3 0 0,1 22,11A3,3 0 0,1 19,14C17.84,14 16.84,13.34 16.34,12.38C17.2,11.27 17.62,9.85 17.47,8.42C17.92,8.15 18.44,8 19,8M5.5,18.25C5.5,16.18 8.41,14.5 12,14.5C15.59,14.5 18.5,16.18 18.5,18.25V20H5.5V18.25M0,20V18.5C0,17.11 1.89,15.94 4.45,15.6C3.86,16.28 3.5,17.22 3.5,18.25V20H0M24,20H20.5V18.25C20.5,17.22 20.14,16.28 19.55,15.6C22.11,15.94 24,17.11 24,18.5V20Z" />
+                            </svg>
+                            社区守则
+                        </h3>
+                        <ul>
+                            <li>尊重每一位玩家，友好交流</li>
+                            <li>积极帮助新玩家融入社区</li>
+                            <li>参与社区活动，共建服务器</li>
+                            <li>遇到问题联系管理员</li>
+                        </ul>
+                    </div>
+                    <div class="rule-card">
+                        <h3>
+                            <svg class="rule-icon icon" viewBox="0 0 24 24">
+                                <path d="M11,15H13V17H11V15M11,7H13V13H11V7M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20Z" />
+                            </svg>
+                            处罚条例
+                        </h3>
+                        <ul>
+                            <li>初次违规：警告</li>
+                            <li>二次违规：没收违禁物品或严重警告</li>
+                            <li>严重违规：封号处理</li>
+                            <li>恶意破坏：回滚至上一备份</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 服务器动态 -->
+            <section id="news" class="news-section">
+                <div class="section-header">
+                    <h2>服务器动态与日志</h2>
+                    <p>了解服务器最新动态、更新内容和活动通知</p>
+                </div>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025.6.11</div>
+                        <div class="timeline-content">
+                            <h3>预计7月1日开服，服务器开启白名单验证，内部人员才可加入</h3>
+                            <p>敬请期待</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025.6.11</div>
+                        <div class="timeline-content">
+                            <h3>官网建立（服务器暂未开放）</h3>
+                            <p>敬请期待</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 页脚 -->
+        <footer>
+            <div class="footer-content">
+                <p>墨狼云 Minecraft 服务器 - 打造最友好的游戏社区</p>
+                <p class="copyright">© 2023 墨狼云 Minecraft 服务器 版权所有</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 页面加载完成后延迟1秒显示内容
+        window.addEventListener('load', function() {
+            const loader = document.getElementById('loader');
+            const content = document.getElementById('content');
+            
+            // 等待1秒后隐藏加载动画
+            setTimeout(function() {
+                loader.style.opacity = '0';
+                loader.style.visibility = 'hidden';
+                
+                // 显示内容
+                setTimeout(function() {
+                    content.style.opacity = '1';
+                }, 300);
+            }, 1000);
+        });
+        
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
